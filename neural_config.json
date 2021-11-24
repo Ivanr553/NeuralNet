@@ -1,0 +1,20 @@
+{
+    "layers": [
+        {
+            "type": "Binary",
+            "amount": 16
+        },
+        {
+            "type": "Primary",
+            "amount": 40
+        },
+        {
+            "type": "Primary",
+            "amount": 40
+        },
+        {
+            "type": "Binary",
+            "amount": 8
+        }
+    ]
+}
