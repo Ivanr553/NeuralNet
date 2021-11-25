@@ -1,12 +1,12 @@
-import { FixedSizeArray, INode } from "./types";
+import { FixedSizeArray } from "./types";
 import { convertToBinaryArray } from "./utils";
 import { NeuralNet } from "./NeuralNet";
 
-
-
-export const runTest = (NN: NeuralNet, firstNumber: number, secondNumber: number) => {
-    const answer = firstNumber * secondNumber;
+export default (NN: NeuralNet, firstNumber: number, secondNumber: number) => {
+    const product = firstNumber * secondNumber;
+    const productArray = convertToBinaryArray(product);
     const binaryArray = [...convertToBinaryArray(firstNumber), ...convertToBinaryArray(secondNumber)] as FixedSizeArray<16, 1 | 0>;
 
-    NN.insertInputIntoNeuralNet(binaryArray);
+    const resultBinaryArray = NN.getProduct(binaryArray);
+    console.log(resultBinaryArray);
 }

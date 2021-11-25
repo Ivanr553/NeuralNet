@@ -9,7 +9,7 @@ describe('base tests', () => {
         const firstNumber = 7;
         const secondNumber = 14;
         const binaryArray = [...convertToBinaryArray(firstNumber), ...convertToBinaryArray(secondNumber)] as FixedSizeArray<16, 1 | 0>;
-        NN.insertInputIntoNeuralNet(binaryArray);
+        NN.getProduct(binaryArray);
 
         binaryArray.forEach((bit: 1 | 0, index: number) => {
             expect(bit).toEqual(NN.nodes[0][index].activation);

@@ -8,6 +8,8 @@ export const sigmoid = (z: number): number => {
     return 1 / (1 + Math.exp(-z / config.sigmoidConstant));
 }
 
+export const generateRandomNumber = (max: number, min: number) => Math.floor(Math.random() * (max - min + 1) + min);
+
 export const getNodeClass = (nodeType: NodeType): typeof BinaryNode | typeof PrimaryNode => {
     switch (nodeType) {
         case NodeType.Binary.toString(): {

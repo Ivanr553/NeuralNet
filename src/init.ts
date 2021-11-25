@@ -17,5 +17,5 @@ export default (arg: Args) => {
     }
 
     const neuralMemory = data as NeuralNetMemory;
-    let NN: NeuralNet = new NeuralNet(neuralMemory);
+    return new NeuralNet(neuralMemory);
 }

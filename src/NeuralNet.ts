@@ -5,7 +5,7 @@ import PrimaryNode from './nodes/primaryNode';
 import initJson from '../neural_config.json';
 
 export class NeuralNet {
-    public nodes: INeuralNet = [];
+    public layers: INeuralNet = [];
 
     public constructor(memory: NeuralNetMemory) {
         console.log('Initializing neural net');
@@ -14,9 +14,8 @@ export class NeuralNet {
         if (!memory.layers.length) {
             console.log('Creating new layers');
             const layers = this.createLayers(config.layers);
-            const printedLayers = layers.map(layer => layer.map(innerLayer => innerLayer.print()));
-            memory.layers = printedLayers;
-            this.nodes = layers;
+            memory.layers = layers.map(layer => layer.map(innerLayer => innerLayer.print()));
+            this.layers = layers;
             console.log('Completed creating new layers');
             saveFile(NEURAL_NET_FILE_NAME, memory);
         } else {
@@ -27,12 +26,29 @@ export class NeuralNet {
         console.log('Finished initializing neural net');
     }
 
-    public getNodes = () => {
-        return this.nodes;
+    public getProduct = (binaryArray: FixedSizeArray<16, 1 | 0>): FixedSizeArray<8, number> => {
+        this.insertInputIntoNeuralNet(binaryArray);
+        this.runCalculations();
+        const resultBinaryNode: FixedSizeArray<8, number> = [0, 0, 0, 0, 0, 0, 0, 0];
+        this.layers[this.layers.length - 1].forEach((node, index) => {
+            resultBinaryNode[index] = node.activation;
+        });
+
+        return resultBinaryNode;
     }
 
-    public insertInputIntoNeuralNet = (binaryArray: FixedSizeArray<16, 1 | 0>) => {
-        this.nodes[0].forEach((node: INode, index: number) => {
+    private runCalculations = () => {
+        const layers = this.layers;
+        for (let i = 0; i < layers.length; i++) {
+            const layer = layers[i];
+            for (let j = 0; j < layer.length; j++) {
+                layer[j].calculate();
+            }
+        }
+    }
+
+    private insertInputIntoNeuralNet = (binaryArray: FixedSizeArray<16, 1 | 0>) => {
+        this.layers[0].forEach((node: INode, index: number) => {
             const bit = binaryArray[index];
             node.calculate(bit);
         })
@@ -77,7 +93,7 @@ export class NeuralNet {
             nodes[i] = newLayer;
         }
 
-        this.nodes = nodes;
+        this.layers = nodes;
     };
 
 }
