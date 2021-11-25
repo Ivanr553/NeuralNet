@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node ./build/src"
+    "start": "tsc && node ./build/src",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -12,7 +13,11 @@
     "mathjs": "^10.0.0"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.3",
     "@types/node": "^7.10.14",
+    "jest": "^27.3.1",
+    "ts-jest": "^27.0.7",
+    "ts-node": "^10.4.0",
     "typescript": "^4.5.2"
   }
 }
