@@ -32,7 +32,7 @@ export abstract class Node implements INode {
             this.prev = prev.map(node => ({
                 index: node.index,
                 node,
-                weight: 0
+                weight: 1
             }));
         }
     }
@@ -47,7 +47,7 @@ export abstract class Node implements INode {
             throw 'Attempting to calculate on a node without a list of previous nodes';
         }
         const prevActivations = this.prev.slice().reduce<number>((accumulatedValue: number, prevNode: PrevNode): number => accumulatedValue + (prevNode.weight * prevNode.node.activation), 0);
-        this.activation = sigmoid(prevActivations + this.bias);
+        this.activation = sigmoid(prevActivations);
     };
 
     /**
@@ -58,10 +58,40 @@ export abstract class Node implements INode {
     }
 
     /**
-     * Trains the node to learn from the testing result
+     * Gets the length of the prev layer
+     * 
+     * @returns the length of the prev layer
      */
-    public train(): void {
+    public getPrevLayerLength = (): number => {
+        return this.prev ? this.prev.length : 0;
+    }
 
+    /**
+     * Trains the node to learn from the testing result
+     * 
+     * @param error the error used to recalculate this node's weights
+     * @returns the error array for this node's connections
+     */
+    public train(error: number): number[] {
+        if (!this.prev) {
+            return [];
+        }
+
+        const newError: number[] = [];
+        let totalWeight = 0;
+
+        this.prev.forEach((node: PrevNode) => {
+            totalWeight += node.weight;
+        });
+
+        this.prev.forEach(node => {
+            const currentWeight = node.weight;
+            const errorProportion = (currentWeight / totalWeight) * error;
+            node.weight = currentWeight + errorProportion;
+            newError.push(errorProportion);
+        })
+
+        return newError;
     }
 
     /**

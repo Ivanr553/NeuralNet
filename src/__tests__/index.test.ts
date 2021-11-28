@@ -12,7 +12,7 @@ describe('base tests', () => {
         NN.getProduct(binaryArray);
 
         binaryArray.forEach((bit: 1 | 0, index: number) => {
-            expect(bit).toEqual(NN.nodes[0][index].activation);
+            expect(bit).toEqual(NN.layers[0][index].activation);
         })
     })
 })

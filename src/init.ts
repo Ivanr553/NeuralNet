@@ -12,6 +12,7 @@ export default (arg: Args) => {
         case Args.Reset: {
             console.log('Reseting neural net data');
             saveFile(NEURAL_NET_FILE_NAME, cleanData);
+            process.exit();
         }
         default: ;
     }

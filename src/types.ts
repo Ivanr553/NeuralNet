@@ -11,6 +11,8 @@ export interface INode {
     activation: number;
     calculate(input?: 1 | 0): void;
     print: () => PrintedNode;
+    train: (error: number) => number[];
+    getPrevLayerLength: () => number;
 }
 
 export enum NodeType {
@@ -30,6 +32,7 @@ export interface Layer {
 export type INeuralNet = INode[][];
 
 export interface NeuralNetMemory {
+    batchSize: number;
     trainingCycles: number;
     failures: number;
     layers: PrintedNode[][];

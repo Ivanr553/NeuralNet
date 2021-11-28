@@ -3,6 +3,7 @@ import BinaryNode from './nodes/binaryNode';
 import PrimaryNode from './nodes/primaryNode';
 import { FixedSizeArray, NeuralNetMemory, NodeType } from './types';
 import fs from 'fs';
+import readline from 'readline';
 
 export const sigmoid = (z: number): number => {
     return 1 / (1 + Math.exp(-z / config.sigmoidConstant));
@@ -54,6 +55,18 @@ export const convertToBinaryArray = (number: number): FixedSizeArray<8, 1 | 0> =
 export const saveFile = (fileName: string, json: NeuralNetMemory) => {
     console.log(`Saving file: ${fileName}`);
     fs.writeFileSync(fileName, JSON.stringify(json));
+}
+
+export const getCLIResponse = (question: string): Promise<string> => {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    return new Promise(resolve => rl.question(question, (ans: string) => {
+        rl.close();
+        resolve(ans);
+    }))
 }
 
 //numbers need to be smaller than 16
