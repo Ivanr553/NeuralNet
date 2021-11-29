@@ -1,6 +1,11 @@
+import config from '../neural_config.json';
 import { PrintedNode } from "./NeuralNet/nodes/node";
 
 export const NEURAL_NET_FILE_NAME = './neural_data.json';
+
+export const MAX_NUMBER_SIZE = 15;
+
+export const INPUT_LAYER_SIZE = config.layers[0].amount;
 
 export enum Args {
     Reset = 'reset',
@@ -10,7 +15,8 @@ export enum Args {
 
 export enum LoggingLevel {
     Default = 0,
-    Verbose = 1
+    Inspect = 1,
+    Verbose = 2
 }
 
 export interface INode {
@@ -28,6 +34,9 @@ export enum NodeType {
 }
 
 export interface Config {
+    batchSize: number;
+    maximumStoredErrors: number;
+    learningRate: number;
     layers: Layer[];
 }
 
@@ -39,9 +48,7 @@ export interface Layer {
 export type INeuralNet = INode[][];
 
 export interface NeuralNetMemory {
-    batchSize: number;
     completedCycles: number;
-    learningRate: number;
     totalErrorPerBatch: number[];
     layers: PrintedNode[][];
 }

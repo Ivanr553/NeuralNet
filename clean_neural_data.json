@@ -1,7 +1,5 @@
 {
-    "batchSize": 10,
     "completedCycles": 0,
-    "learningRate": 1,
     "totalErrorPerBatch": [],
     "layers": []
 }

@@ -10,10 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cli-progress": "^3.9.1",
     "mathjs": "^10.0.0",
     "minimist": "^1.2.5"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.9.2",
     "@types/jest": "^27.0.3",
     "@types/minimist": "^1.2.2",
     "@types/node": "^7.10.14",

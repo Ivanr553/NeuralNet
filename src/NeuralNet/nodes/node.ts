@@ -23,10 +23,10 @@ export abstract class Node implements INode {
     private prev: PrevNode[] | undefined;
     public activation: number = 0;
 
-    public constructor(type: NodeType, index: number, prev?: INode[], prevWeights?: number[]) {
+    public constructor(type: NodeType, index: number, bias?: number, prev?: INode[], prevWeights?: number[]) {
         this.type = type;
         this.index = index;
-        this.bias = 0;
+        this.bias = bias || 0;
         this.prev = [];
         if (prev && prevWeights) {
             this.prev = prev.map((node, index) => ({
@@ -47,7 +47,7 @@ export abstract class Node implements INode {
             throw 'Attempting to calculate on a node without a list of previous nodes';
         }
         const prevActivations = this.prev.slice().reduce<number>((accumulatedValue: number, prevNode: PrevNode): number => accumulatedValue + (prevNode.weight * prevNode.node.activation), 0);
-        this.activation = sigmoid(prevActivations);
+        this.activation = sigmoid(prevActivations + this.bias);
     };
 
     /**
@@ -77,13 +77,12 @@ export abstract class Node implements INode {
             return [];
         }
 
+        // adjust bias
+        const biasDelta = learningRate * error * activationDerivative(this.activation);
+        const currentBias = this.bias;
+        this.bias = currentBias + biasDelta;
+
         const newError: number[] = [];
-        let totalWeight = 0;
-
-        this.prev.forEach((node: PrevNode) => {
-            totalWeight += node.weight;
-        });
-
         this.prev.forEach(prevNode => {
             // adjust weight
             const delta = learningRate * error * activationDerivative(this.activation) * prevNode.node.activation;

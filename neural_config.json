@@ -1,5 +1,7 @@
 {
-    "sigmoidConstant": 2,
+    "batchSize": 10,
+    "learningRate": 0.01,
+    "maximumStoredErrors": 100,
     "layers": [
         {
             "type": "Binary",
@@ -7,11 +9,7 @@
         },
         {
             "type": "Primary",
-            "amount": 40
-        },
-        {
-            "type": "Primary",
-            "amount": 40
+            "amount": 150
         },
         {
             "type": "Primary",

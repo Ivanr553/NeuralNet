@@ -17,8 +17,11 @@ import guess from './commands/guess';
         process.exit();
     }
 
+    const loggingLevel = args?.level;
+    loggingLevel !== undefined ? console.log('Logging level:', loggingLevel) : null;
+
     const neuralMemory = data as any as NeuralNetMemory;
-    const NN = new NeuralNet(neuralMemory);
+    const NN = new NeuralNet(neuralMemory, loggingLevel);
 
     if (args._.indexOf(Args.Train) > -1) {
         await train(NN);

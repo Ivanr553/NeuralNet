@@ -1,5 +1,5 @@
-import { NEURAL_NET_FILE_NAME, Config, FixedSizeArray, INeuralNet, INode, Layer, NeuralNetMemory, LoggingLevel } from '../types';
-import { convertToBinaryArray, generateRandomNumber, generateRandomWeight, getNodeClass, saveFile } from '../utils';
+import { NEURAL_NET_FILE_NAME, Config, FixedSizeArray, INeuralNet, INode, Layer, NeuralNetMemory, LoggingLevel, MAX_NUMBER_SIZE } from '../types';
+import { convertToBinaryArray, generateRandomNumber, generateRandomWeight, getNodeClass, saveFile, shuffle } from '../utils';
 import BinaryNode from './nodes/binaryNode';
 import PrimaryNode from './nodes/primaryNode';
 import initJson from '../../neural_config.json';
@@ -11,17 +11,20 @@ export class NeuralNet {
     public learningRate: number;
     public batchSize: number;
     public totalErrorPerBatch: number[];
+    private maximumStoredErrors: number;
     public layers: INeuralNet = [];
     private logger: NNLogger;
+    private trainingList: [number, number][] = [];
 
     public constructor(memory: NeuralNetMemory, loggingLevel: LoggingLevel = LoggingLevel.Default) {
         this.logger = new NNLogger(loggingLevel);
         this.logger.log(LoggingLevel.Default, ['Initializing neural net']);
         const config = initJson as Config;
         this.completedCycles = memory.completedCycles;
-        this.learningRate = memory.learningRate;
-        this.batchSize = memory.batchSize;
+        this.learningRate = config.learningRate;
+        this.batchSize = config.batchSize;
         this.totalErrorPerBatch = memory.totalErrorPerBatch;
+        this.maximumStoredErrors = config.maximumStoredErrors;
 
         if (!memory.layers.length) {
             const layers = this.createLayers(config.layers);
@@ -42,8 +45,6 @@ export class NeuralNet {
         const newMemory: NeuralNetMemory = {
             completedCycles: this.completedCycles,
             totalErrorPerBatch: this.totalErrorPerBatch,
-            learningRate: this.learningRate,
-            batchSize: this.batchSize,
             layers: this.printLayers()
         }
         saveFile(NEURAL_NET_FILE_NAME, newMemory);
@@ -51,33 +52,66 @@ export class NeuralNet {
 
     public saveTotalError = (totalErrorArray: FixedSizeArray<8, number>): void => {
         const totalError = totalErrorArray.reduce((totalError: number, error: number) => totalError + error, 0);
+
+        if (this.totalErrorPerBatch.length > this.maximumStoredErrors) {
+            this.totalErrorPerBatch.shift();
+        }
+
         this.totalErrorPerBatch.push(totalError);
+    }
+
+    /**
+     * Will generate a training list for all the potential number sets that could be passed to the neural net
+     */
+    private generateTrainingList = () => {
+        const newTrainingList: [number, number][] = [];
+        for (let i = 0; i <= MAX_NUMBER_SIZE; i++) {
+            for (let j = 0; j <= MAX_NUMBER_SIZE; j++) {
+                let newTrainingSet: [number, number] = [i, j];
+                newTrainingList.push(newTrainingSet);
+            }
+        }
+
+        const shuffledTrainingList = shuffle<[number, number]>(newTrainingList)
+        this.logger.log(LoggingLevel.Inspect, ['New training set:', shuffledTrainingList]);
+        this.trainingList = shuffledTrainingList;
+    }
+
+    /**
+     * Returns the next set of numbers to train on
+     * 
+     * @returns the next set of training numbers
+     */
+    private getNextTrainingSet = (): [number, number] => {
+        if (this.trainingList.length === 0) {
+            this.generateTrainingList();
+        }
+
+        return this.trainingList.pop() as [number, number];
     }
 
     /**
      * Runs a batch training
      */
     public runTrainingBatch = () => {
-        console.time('Run Batch');
         const batchSize = this.batchSize;
 
         let totalErrorArray: FixedSizeArray<8, number> = [0, 0, 0, 0, 0, 0, 0, 0];
         for (let i = 0; i < batchSize; i++) {
 
-            const firstNumber = generateRandomNumber(0, 10);
-            const secondNumber = generateRandomNumber(0, 10);
+            const [firstNumber, secondNumber] = this.getNextTrainingSet();
             const binaryInputArray = [...convertToBinaryArray(firstNumber), ...convertToBinaryArray(secondNumber)] as FixedSizeArray<16, 1 | 0>;
 
             const product = firstNumber * secondNumber;
             const productArray = convertToBinaryArray(product);
 
-            this.logger.log(LoggingLevel.Verbose, ['Getting product of:', firstNumber, secondNumber]);
+            this.logger.log(LoggingLevel.Inspect, ['Training for product of:', firstNumber, secondNumber]);
             this.logger.log(LoggingLevel.Verbose, ['Binary Array:', binaryInputArray]);
             const resultBinaryArray = this.getProduct(binaryInputArray);
-            this.logger.log(LoggingLevel.Verbose, ["Result:", resultBinaryArray]);
+            this.logger.log(LoggingLevel.Verbose, ["Result Array:", resultBinaryArray]);
             this.logger.log(LoggingLevel.Verbose, ["Product Array:", productArray]);
 
-            const errorArray = this.getError(productArray)
+            const errorArray = this.getOutputError(productArray);
             this.logger.log(LoggingLevel.Verbose, ["Error Array:", errorArray]);
 
             totalErrorArray = totalErrorArray.map((error: number, index: number) => error + errorArray[index]) as FixedSizeArray<8, number>;
@@ -88,7 +122,6 @@ export class NeuralNet {
         this.saveTotalError(totalErrorArray);
 
         this.completedCycles += 1;
-        console.timeEnd('Run Batch');
         return totalErrorArray;
     }
 
@@ -105,11 +138,11 @@ export class NeuralNet {
         return resultBinaryArray;
     }
 
-    public getError = (productBinaryArray: FixedSizeArray<8, 1 | 0>): FixedSizeArray<8, number> => {
+    public getOutputError = (productBinaryArray: FixedSizeArray<8, 1 | 0>): FixedSizeArray<8, number> => {
         this.logger.log(LoggingLevel.Verbose, ['Getting cost']);
         const costArray: FixedSizeArray<8, number> = [0, 0, 0, 0, 0, 0, 0, 0];
         productBinaryArray.forEach((bit: 1 | 0, index: number) => {
-            costArray[index] = this.layers[this.layers.length - 1][index].activation - bit;
+            costArray[index] = bit - this.layers[this.layers.length - 1][index].activation;
         })
         return costArray;
     }
@@ -177,7 +210,7 @@ export class NeuralNet {
             prevLayer?.forEach(_ => {
                 prevWeights.push(generateRandomWeight());
             })
-            newLayer.push(new nodeClass(i, prevLayer, prevWeights));
+            newLayer.push(new nodeClass(i, undefined, prevLayer, prevWeights));
         }
         return newLayer;
     }
@@ -213,7 +246,7 @@ export class NeuralNet {
             for (let j = 0; j < layer.length; j++) {
                 const printedNode = layer[j];
                 const nodeClass = getNodeClass(printedNode.type)
-                newLayer.push(new nodeClass(printedNode.bias, prevLayer, printedNode.prev));
+                newLayer.push(new nodeClass(j, printedNode.bias, prevLayer, printedNode.prev));
             }
 
             nodes[i] = newLayer;
