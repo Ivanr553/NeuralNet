@@ -1,34 +1,34 @@
-import init from './init';
-import runTest from './runTest';
-import { Args, FixedSizeArray } from './types';
-import { generateRandomNumber, getCLIResponse } from './utils';
+import cleanData from '../clean_neural_data.json';
+import data from '../neural_data.json';
+import { Args, NeuralNetMemory, NEURAL_NET_FILE_NAME } from './types';
+import { saveFile } from './utils';
+import argv from 'minimist';
+import { NeuralNet } from './NeuralNet/NeuralNet';
+import train from './commands/train';
+import guess from './commands/guess';
 
 (async () => {
-    const arg = process.argv.slice(2)[0];
+    const args = argv(process.argv.slice(2));
 
-    const NN = init(arg as Args);
-
-    const response = await getCLIResponse('How many cycles?');
-    const numberOfCycles = parseInt(response);
-
-    if (numberOfCycles === NaN) {
-        throw 'Invalid input given for number of cycles';
+    const shouldReset = args._.indexOf(Args.Reset) > -1;
+    if (shouldReset) {
+        console.log('Resetting neural net data');
+        saveFile(NEURAL_NET_FILE_NAME, cleanData);
+        process.exit();
     }
 
-    let totalErrorArray: FixedSizeArray<8, number> = [0, 0, 0, 0, 0, 0, 0, 0];
-    for (let i = 0; i < numberOfCycles; i++) {
-        const firstNumber = generateRandomNumber(0, 10);
-        const secondNumber = generateRandomNumber(0, 10);
+    const neuralMemory = data as any as NeuralNetMemory;
+    const NN = new NeuralNet(neuralMemory);
 
-        const errorArray = runTest(NN, firstNumber, secondNumber);
-        totalErrorArray = totalErrorArray.map((error: number, index: number) => error + errorArray[index]) as FixedSizeArray<8, number>;
+    if (args._.indexOf(Args.Train) > -1) {
+        await train(NN);
+        NN.saveChanges();
+    } else if (args._.indexOf(Args.Guess) > -1) {
+        guess(NN);
+    } else {
+        console.log('No process argument given. Choose from these options:');
+        console.log(' - ', Args.Train);
+        console.log(' - ', Args.Guess);
+        console.log(' - ', Args.Reset);
     }
-
-    totalErrorArray = totalErrorArray.map(error => error / numberOfCycles) as FixedSizeArray<8, number>;
-
-    const totalError = totalErrorArray.reduce((totalError: number, error: number) => totalError + error, 0);
-    console.log("Total Error:", totalError);
-
-    NN.backPropogate(totalErrorArray);
 })()
-

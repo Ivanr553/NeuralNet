@@ -1,5 +1,5 @@
-import { INode, NodeType } from "../types";
-import { sigmoid } from "../utils";
+import { INode, NodeType } from "../../types";
+import { activationDerivative, sigmoid } from "../../utils";
 
 export interface PrevNode {
     index: number;
@@ -23,16 +23,16 @@ export abstract class Node implements INode {
     private prev: PrevNode[] | undefined;
     public activation: number = 0;
 
-    public constructor(type: NodeType, index: number, prev?: INode[]) {
+    public constructor(type: NodeType, index: number, prev?: INode[], prevWeights?: number[]) {
         this.type = type;
         this.index = index;
         this.bias = 0;
         this.prev = [];
-        if (prev) {
-            this.prev = prev.map(node => ({
+        if (prev && prevWeights) {
+            this.prev = prev.map((node, index) => ({
                 index: node.index,
                 node,
-                weight: 1
+                weight: prevWeights[index]
             }));
         }
     }
@@ -72,7 +72,7 @@ export abstract class Node implements INode {
      * @param error the error used to recalculate this node's weights
      * @returns the error array for this node's connections
      */
-    public train(error: number): number[] {
+    public train(error: number, learningRate: number): number[] {
         if (!this.prev) {
             return [];
         }
@@ -84,10 +84,14 @@ export abstract class Node implements INode {
             totalWeight += node.weight;
         });
 
-        this.prev.forEach(node => {
-            const currentWeight = node.weight;
-            const errorProportion = (currentWeight / totalWeight) * error;
-            node.weight = currentWeight + errorProportion;
+        this.prev.forEach(prevNode => {
+            // adjust weight
+            const delta = learningRate * error * activationDerivative(this.activation) * prevNode.node.activation;
+            const currentWeight = prevNode.weight;
+            prevNode.weight = currentWeight + delta;
+
+            // calculate error for next layer
+            const errorProportion = prevNode.weight * error;
             newError.push(errorProportion);
         })
 

@@ -1,15 +1,26 @@
-import config from '../neural_config.json';
-import BinaryNode from './nodes/binaryNode';
-import PrimaryNode from './nodes/primaryNode';
+import BinaryNode from './NeuralNet/nodes/binaryNode';
+import PrimaryNode from './NeuralNet/nodes/primaryNode';
 import { FixedSizeArray, NeuralNetMemory, NodeType } from './types';
 import fs from 'fs';
 import readline from 'readline';
 
 export const sigmoid = (z: number): number => {
-    return 1 / (1 + Math.exp(-z / config.sigmoidConstant));
+    return 1 / (1 + Math.exp(-z));
+}
+
+export const activationDerivative = (activation: number): number => {
+    return activation * (1 - activation);
 }
 
 export const generateRandomNumber = (max: number, min: number) => Math.floor(Math.random() * (max - min + 1) + min);
+export const generateRandomWeight = () => {
+    const isNegative = Math.random() > 0.5;
+    if (isNegative) {
+        return -(Math.random());
+    } else {
+        return Math.random();
+    }
+}
 
 export const getNodeClass = (nodeType: NodeType): typeof BinaryNode | typeof PrimaryNode => {
     switch (nodeType) {
@@ -50,6 +61,20 @@ export const convertToBinaryArray = (number: number): FixedSizeArray<8, 1 | 0> =
     }
 
     return binaryArray;
+}
+
+export const convertToBit = (num: number): 1 | 0 => {
+    return num >= 0.5 ? 1 : 0;
+}
+
+export const convertToIntFromBinaryArray = (binaryArray: (1 | 0)[]): number => {
+    let number = 0;
+    for (let i = binaryArray.length - 1; i >= 0; i--) {
+        const power = (binaryArray.length - 1) - i;
+        let currentBinaryDecimal = Math.pow(2, power);
+        number += binaryArray[i] * currentBinaryDecimal;
+    }
+    return number;
 }
 
 export const saveFile = (fileName: string, json: NeuralNetMemory) => {
