@@ -1,4 +1,5 @@
 import { NeuralNet } from "../NeuralNet/NeuralNet";
+import { Bit } from "../NeuralNet/nodes/node";
 import { FixedSizeArray } from "../types";
 import { convertToBinaryArray, convertToBit, convertToIntFromBinaryArray, getCLIResponse } from "../utils";
 
@@ -17,17 +18,17 @@ export default async (NN: NeuralNet) => {
         process.exit();
     }
 
-    const binaryInputArray = [...convertToBinaryArray(firstNumber), ...convertToBinaryArray(secondNumber)] as FixedSizeArray<16, 1 | 0>;
+    const binaryInputArray = [...convertToBinaryArray(firstNumber), ...convertToBinaryArray(secondNumber)] as FixedSizeArray<16, Bit>;
     const resultBinaryArray = NN.getProduct(binaryInputArray);
-    const bitifiedResultBinaryArray = resultBinaryArray.slice().map(activation => convertToBit(activation));
+    const bitifiedResultBinaryArray: FixedSizeArray<8, Bit> = resultBinaryArray.slice().map(activation => convertToBit(activation)) as FixedSizeArray<8, Bit>;
     const guess = convertToIntFromBinaryArray(bitifiedResultBinaryArray);
     const productBinaryArray = convertToBinaryArray(firstNumber * secondNumber);
-    const averageCost = resultBinaryArray.slice().reduce((prev: number, curr: number, index: number) => prev + (Math.pow(curr - productBinaryArray[index], 2)), 0);
+	const errorArray = NN.getOutputError(resultBinaryArray, productBinaryArray);
 
     console.log('Correct answer:', firstNumber * secondNumber);
     console.log('Guess:', guess);
     console.log('Correct binary array', productBinaryArray);
     console.log('Guess binary array:', bitifiedResultBinaryArray);
     console.log('Guess output array:', resultBinaryArray);
-    console.log('Average cost:', averageCost);
+    console.log('Average cost:', errorArray);
 }

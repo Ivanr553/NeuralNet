@@ -1,5 +1,5 @@
 import { INode, NodeType } from "../../types";
-import { activationDerivative, sigmoid } from "../../utils";
+import { ReLU, ReLuDerivative } from "../../utils";
 
 export interface PrevNode {
     index: number;
@@ -13,15 +13,18 @@ export interface PrintedNode {
     prev: number[];
 }
 
+export type Bit = 1 | 0;
+
 /**
  * Base abstract class for nodes. Every type of node will extend this.
  */
 export abstract class Node implements INode {
     public type: NodeType;
     public index: number;
-    private bias: number = 0;
-    private prev: PrevNode[] | undefined;
+    protected bias: number = 0;
+    protected prev: PrevNode[] | undefined;
     public activation: number = 0;
+	public ReLUActivation: number = 0;
 
     public constructor(type: NodeType, index: number, bias?: number, prev?: INode[], prevWeights?: number[]) {
         this.type = type;
@@ -42,12 +45,13 @@ export abstract class Node implements INode {
      * 
      * @param input The binary number input used in binary nodes
      */
-    public calculate(input?: 1 | 0): void {
+    public calculate(input?: number): void {
         if (!this.prev) {
             throw 'Attempting to calculate on a node without a list of previous nodes';
         }
-        const prevActivations = this.prev.slice().reduce<number>((accumulatedValue: number, prevNode: PrevNode): number => accumulatedValue + (prevNode.weight * prevNode.node.activation), 0);
-        this.activation = sigmoid(prevActivations + this.bias);
+        const prevActivations = this.prev.slice().reduce<number>((accumulatedValue: number, prevNode: PrevNode): number => accumulatedValue + (prevNode.weight * prevNode.node.ReLUActivation), 0);
+		this.activation = prevActivations + this.bias;
+        this.ReLUActivation = ReLU(this.activation);
     };
 
     /**
@@ -55,6 +59,7 @@ export abstract class Node implements INode {
      */
     public reset(): void {
         this.activation = 0;
+		this.ReLUActivation = 0;
     }
 
     /**
@@ -78,16 +83,20 @@ export abstract class Node implements INode {
         }
 
         // adjust bias
-        const biasDelta = learningRate * error * activationDerivative(this.activation);
         const currentBias = this.bias;
+        const biasDelta = learningRate * error * currentBias * ReLuDerivative(this.activation);
+		// console.log('Old Bias:', this.bias);
         this.bias = currentBias + biasDelta;
+		// console.log('New Bias:', this.bias);
 
         const newError: number[] = [];
         this.prev.forEach(prevNode => {
             // adjust weight
-            const delta = learningRate * error * activationDerivative(this.activation) * prevNode.node.activation;
             const currentWeight = prevNode.weight;
-            prevNode.weight = currentWeight + delta;
+            const delta = learningRate * error * currentWeight * ReLuDerivative(prevNode.node.activation); 
+			// console.log('Old Weight:', currentWeight);
+            prevNode.weight = currentWeight + (currentWeight * delta);
+			// console.log('New Weight:', prevNode.weight);
 
             // calculate error for next layer
             const errorProportion = prevNode.weight * error;

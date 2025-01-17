@@ -1,19 +1,11 @@
 {
-    "batchSize": 10,
+    "batchSize": 1,
     "learningRate": 0.01,
-    "maximumStoredErrors": 100,
+    "maximumStoredErrors": 1000,
     "layers": [
         {
-            "type": "Binary",
-            "amount": 16
-        },
-        {
             "type": "Primary",
-            "amount": 150
-        },
-        {
-            "type": "Primary",
-            "amount": 8
+            "amount": 20
         }
     ]
 }

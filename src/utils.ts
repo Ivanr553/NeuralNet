@@ -1,44 +1,63 @@
-import BinaryNode from './NeuralNet/nodes/binaryNode';
 import PrimaryNode from './NeuralNet/nodes/primaryNode';
-import { FixedSizeArray, NeuralNetMemory, NodeType } from './types';
+import { FixedSizeArray, NodeType } from './types';
 import fs from 'fs';
 import readline from 'readline';
+import OutputNode from './NeuralNet/nodes/outputNode';
+import { Bit } from './NeuralNet/nodes/node';
+import InputNode from './NeuralNet/nodes/inputNode';
 
-export const sigmoid = (z: number): number => {
-    return 1 / (1 + Math.exp(-z));
+export const ReLU = (z: number): number => {
+	if (z > 0) {
+		return z;
+	} else {
+		return 0;
+	}
 }
 
 export const activationDerivative = (activation: number): number => {
     return activation * (1 - activation);
 }
 
-export const generateRandomNumber = (max: number, min: number) => Math.floor(Math.random() * (max - min + 1) + min);
+export const ReLuDerivative = (activation: number): number => {
+	if (activation < 0) return 0;
+	return 1;
+}
+
+export const generateRandomNumber = (max: number, min: number) => Math.random() * (max - min + 1) + min;
 export const generateRandomWeight = () => {
     const isNegative = Math.random() > 0.5;
     if (isNegative) {
-        return -(Math.random());
+        return -(generateRandomNumber(1, 0));
     } else {
-        return Math.random();
+        return generateRandomNumber(1, 0);
     }
 }
 
-export const getNodeClass = (nodeType: NodeType): typeof BinaryNode | typeof PrimaryNode => {
+export const getNodeClass = (nodeType: NodeType): typeof InputNode | typeof PrimaryNode | typeof OutputNode => {
     switch (nodeType) {
-        case NodeType.Binary.toString(): {
-            return BinaryNode;
+        case NodeType.Input.toString(): {
+            return InputNode;
         }
 
         case NodeType.Primary.toString(): {
             return PrimaryNode;
         }
 
+		case NodeType.Output.toString(): {
+			return OutputNode;
+		}
+
         default:
             throw `Unable to get node class. Invalid type of ${nodeType}`;
     }
 }
 
-export const convertToBinaryArray = (number: number): FixedSizeArray<8, 1 | 0> => {
-    const binaryArray: FixedSizeArray<8, 1 | 0> = [0, 0, 0, 0, 0, 0, 0, 0];
+export const convertIntArrayToBinaryArray = (array: FixedSizeArray<8, number>): FixedSizeArray<8, Bit> => {
+	return array.slice().map(num => convertToBit(num)) as FixedSizeArray<8, Bit>;
+}
+
+export const convertToBinaryArray = (number: number): FixedSizeArray<8, Bit> => {
+    const binaryArray: FixedSizeArray<8, Bit> = [0, 0, 0, 0, 0, 0, 0, 0];
 
     if (number < 0) {
         throw 'Attempting to convert negative number to binary array';
@@ -63,11 +82,11 @@ export const convertToBinaryArray = (number: number): FixedSizeArray<8, 1 | 0> =
     return binaryArray;
 }
 
-export const convertToBit = (num: number): 1 | 0 => {
-    return num >= 0.5 ? 1 : 0;
+export const convertToBit = (num: number): Bit => {
+    return num >= 1 ? 1 : 0;
 }
 
-export const convertToIntFromBinaryArray = (binaryArray: (1 | 0)[]): number => {
+export const convertToIntFromBinaryArray = (binaryArray: Bit[]): number => {
     let number = 0;
     for (let i = binaryArray.length - 1; i >= 0; i--) {
         const power = (binaryArray.length - 1) - i;
@@ -77,8 +96,7 @@ export const convertToIntFromBinaryArray = (binaryArray: (1 | 0)[]): number => {
     return number;
 }
 
-export const saveFile = (fileName: string, json: NeuralNetMemory) => {
-    console.log(`Saving file: ${fileName}`);
+export const saveFile = (fileName: string, json: Object) => {
     fs.writeFileSync(fileName, JSON.stringify(json));
 }
 
